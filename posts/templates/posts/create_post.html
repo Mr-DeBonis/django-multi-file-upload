@@ -1,0 +1,60 @@
+{% extends 'posts/base.html' %}
+
+{% block content %}
+    <input type="file" multiple/>
+    <label for="title">Title</label>
+    <input type="text" name="" id="title" class="form-control">
+    <label for="description">Description</label>
+    <textarea name="" id="description" cols="30" rows="10" class="form-control"></textarea>
+    <button type="button" id="saveBtn" class="btn btn-primary mt-4">Save</button>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var files = []
+
+        const inputElement = document.querySelector('input[type="file"]');
+        const pond = FilePond.create(inputElement, {
+            onaddfile: (err, fileItem) => {
+                files.push(fileItem.file);
+                console.log(files);
+            },
+            onremovefile: (err, fileItem) => {
+                var index = files.indexOf(fileItem);
+                if (index > -1) {
+                    files.splice(index, 1);
+                }
+                console.log(files);
+            }
+        });
+
+        var formData = new FormData();
+        var title = document.getElementById('title');
+        var description = document.getElementById('description');
+        document.getElementById('saveBtn').onclick = function (e) {
+            formData.append('title', title.value);
+            formData.append('description', description.value);
+            formData.append('length', files.length)
+            for (var i = 0; i < files.length; i++) {
+                formData.append('images' + i, files[i]);
+            }
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            $.ajax({
+                type: 'POST',
+                url: '{% url "posts:create_post" %}',
+                data: formData,
+                cache: false,
+                processData: false,
+                contentType: false,
+                enctype: 'multipart/form-data',
+                success: function () {
+                    alert('The post has been created.');
+                },
+                error: function (xhr, errmsg, err) {
+                    console.log(xhr.status + ":" + xhr.responseText)
+                }
+            })
+        };
+    })
+    </script>
+{% endblock %}
