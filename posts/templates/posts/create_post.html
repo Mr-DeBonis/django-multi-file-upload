@@ -11,11 +11,18 @@
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         var files = []
-
+        FilePond.registerPlugin(FilePondPluginFileValidateSize);
+        FilePond.setOptions({
+            allowMultiple: true,
+            maxFiles: 4,
+            maxFileSize: '3MB',
+        })
         const inputElement = document.querySelector('input[type="file"]');
         const pond = FilePond.create(inputElement, {
             onaddfile: (err, fileItem) => {
-                files.push(fileItem.file);
+                if(!err){
+                    files.push(fileItem.file);
+                }
                 console.log(files);
             },
             onremovefile: (err, fileItem) => {
