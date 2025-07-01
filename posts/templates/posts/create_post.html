@@ -12,6 +12,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         var files = []
         FilePond.registerPlugin(FilePondPluginFileValidateSize);
+        FilePond.registerPlugin(FilePondPluginFileValidateType);
         FilePond.setOptions({
             allowMultiple: true,
             maxFiles: 4,
@@ -19,6 +20,7 @@
         })
         const inputElement = document.querySelector('input[type="file"]');
         const pond = FilePond.create(inputElement, {
+            acceptedFileTypes: ['image/png','image/jpg','image/jpeg'],
             onaddfile: (err, fileItem) => {
                 if(!err){
                     files.push(fileItem.file);
