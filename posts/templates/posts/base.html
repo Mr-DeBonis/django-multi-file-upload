@@ -8,8 +8,8 @@
     <link href="https://unpkg.com/filepond@^4/dist/filepond.css" rel="stylesheet" />
 </head>
 <body>
-<br>
-<div class="container">
+{% include 'posts/navbar.html' %}
+<div class="container my-4">
     {% block content %}
     {% endblock %}
 </div>
