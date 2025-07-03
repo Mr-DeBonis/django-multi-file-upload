@@ -1,7 +1,12 @@
 {% extends 'posts/base.html' %}
 
 {% block content %}
-    <input type="file" multiple/>
+    <input type="file" class="filepond"
+           name="filepond"
+           multiple
+           data-allow-reorder="true"
+           data-max-file-size="3MB"
+           data-max-files="3"/>
     <label for="title">Title</label>
     <input type="text" name="" id="title" class="form-control">
     <label for="description">Description</label>
@@ -11,16 +16,25 @@
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         var files = []
-        FilePond.registerPlugin(FilePondPluginFileValidateSize);
-        FilePond.registerPlugin(FilePondPluginFileValidateType);
+
+        FilePond.registerPlugin(
+            FilePondPluginFileValidateSize,
+            FilePondPluginFileValidateType,
+            //FilePondPluginImagePreview,
+            //FilePondPluginImageExifOrientation,
+            //FilePondPluginFileValidateSize,
+            //FilePondPluginImageEdit
+        );
+
         FilePond.setOptions({
-            allowMultiple: true,
             maxFiles: 4,
             maxFileSize: '3MB',
+            allowMultiple: true,
         })
         const inputElement = document.querySelector('input[type="file"]');
         const pond = FilePond.create(inputElement, {
             acceptedFileTypes: ['image/png','image/jpg','image/jpeg'],
+            labelFileTypeNotAllowed: 'Formato inválido de archivo',
             onaddfile: (err, fileItem) => {
                 if(!err){
                     files.push(fileItem.file);
@@ -43,9 +57,15 @@
             formData.append('title', title.value);
             formData.append('description', description.value);
             formData.append('length', files.length)
+
+            //files.forEach((fileId, index) => {
+            //    formData.append()
+            //})
+
             for (var i = 0; i < files.length; i++) {
                 formData.append('images' + i, files[i]);
             }
+            
             formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
             $.ajax({
