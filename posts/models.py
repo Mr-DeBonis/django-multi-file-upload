@@ -8,6 +8,12 @@ class Post(models.Model):
     def __str__(self):
         return self.title
 
+    def get_main_image(self):
+        image = PostImage.objects.filter(post=self).first()
+        if image:
+            return image.image
+        return None
+
 
 class PostImage(models.Model):
     post = models.ForeignKey(Post, default=None, on_delete=models.CASCADE)
