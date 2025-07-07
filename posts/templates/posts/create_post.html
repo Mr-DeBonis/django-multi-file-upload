@@ -1,40 +1,68 @@
 {% extends 'posts/base.html' %}
 
 {% block content %}
-    <input type="file" class="filepond"
-           name="filepond"
-           multiple
-           data-allow-reorder="true"
-           data-max-file-size="3MB"
-           data-max-files="3"/>
-    <label for="title">Title</label>
+    <form action="{% url "posts:create_post" %}" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="file"
+               class="filepond"
+               name="filepond"
+               multiple
+               {% comment %}
+               data-allow-reorder="true"
+               data-max-file-size="3MB"
+               data-max-files="3"
+               {% endcomment %}
+               accept="image/*,application/pdf" />
+        <button type="submit" id="saveBtn" class="btn btn-primary mt-4">Save</button>
+    </form>
+
+    {% if form.errors %}
+        {% for field in form %}
+            {% for error in field.errors %}
+                <div class="alert alert-danger" role="alert">
+                  {{ error|escape }}
+                </div>
+            {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+              {{ error|escape }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% comment %}<label for="title">Title</label>
     <input type="text" name="" id="title" class="form-control">
     <label for="description">Description</label>
     <textarea name="" id="description" cols="30" rows="10" class="form-control"></textarea>
-    <button type="button" id="saveBtn" class="btn btn-primary mt-4">Save</button>
-
+    <button type="button" id="saveBtn" class="btn btn-primary mt-4">Save</button>{% endcomment %}
+<!--
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
+
+        document.addEventListener('DOMContentLoaded', function () {
         var files = []
 
         FilePond.registerPlugin(
             FilePondPluginFileValidateSize,
             FilePondPluginFileValidateType,
-            //FilePondPluginImagePreview,
-            //FilePondPluginImageExifOrientation,
+            FilePondPluginImagePreview,
             //FilePondPluginFileValidateSize,
-            //FilePondPluginImageEdit
         );
 
         FilePond.setOptions({
+            server: null,
+            allowMultiple: true,
             maxFiles: 4,
             maxFileSize: '3MB',
-            allowMultiple: true,
+            credits: false,
+            dropOnPage: true,
+            dropOnElement: true,
         })
         const inputElement = document.querySelector('input[type="file"]');
         const pond = FilePond.create(inputElement, {
-            acceptedFileTypes: ['image/png','image/jpg','image/jpeg'],
-            labelFileTypeNotAllowed: 'Formato inválido de archivo',
+            acceptedFileTypes: ['image/*'],
+            labelFileTypeNotAllowed: 'Formato de archivo inválido. Ingrese fotos o imágenes.',
             onaddfile: (err, fileItem) => {
                 if(!err){
                     files.push(fileItem.file);
@@ -43,6 +71,8 @@
             },
             onremovefile: (err, fileItem) => {
                 var index = files.indexOf(fileItem);
+                console.log(fileItem);
+                console.log(files);
                 if (index > -1) {
                     files.splice(index, 1);
                 }
@@ -50,6 +80,7 @@
             }
         });
 
+        {% comment %}
         var formData = new FormData();
         var title = document.getElementById('title');
         var description = document.getElementById('description');
@@ -65,7 +96,7 @@
             for (var i = 0; i < files.length; i++) {
                 formData.append('images' + i, files[i]);
             }
-            
+
             formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
             $.ajax({
@@ -84,6 +115,9 @@
                 }
             })
         };
+        {% endcomment %}
     })
+
     </script>
+    -->
 {% endblock %}

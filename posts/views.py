@@ -1,5 +1,7 @@
-from django.shortcuts import render, get_object_or_404
+from django.contrib import messages
+from django.shortcuts import render, get_object_or_404, redirect
 
+from posts.forms import AddPostForm
 from posts.models import Post, PostImage
 
 
@@ -18,26 +20,25 @@ def detail_view(request, id):
     return render(request, 'posts/detail.html', context=context)
 
 def create_post_view(request):
+
     if request.method == 'POST':
-        print("Received a POST request!")
+        form = AddPostForm(request.POST)
+        files = request.FILES.getlist('filepond')
+        if form.is_valid():
+            post = form.save()
 
-        length = int(request.POST.get('length'))
-        title = request.POST.get('title')
-        description = request.POST.get('description')
+            for file in files:
+                PostImage.objects.create(
+                    post=post,
+                    image=file
+                )
 
-        print(length)
-        print(title)
-        print(description)
+            messages.success(request, "Post saved.")
+            return redirect("posts:index")
+    else:
+        form = AddPostForm()
+    context = {
+        'form': form,
+    }
 
-        post = Post.objects.create(
-            title=title,
-            description=description
-        )
-
-        for file_num in range(0, length):
-            PostImage.objects.create(
-                post=post,
-                image=request.FILES.get(f'images{file_num}'),
-            )
-
-    return render(request, 'posts/create_post.html')
+    return render(request, 'posts/create_post.html', context = context)
