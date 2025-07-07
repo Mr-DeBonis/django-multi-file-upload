@@ -34,6 +34,19 @@
     {% endif %}
 
     <script>
+        function getLocalTimestamp() {
+            const now = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+
+            const year = now.getFullYear();
+            const month = pad(now.getMonth() + 1);
+            const day = pad(now.getDate());
+            const hours = pad(now.getHours());
+            const minutes = pad(now.getMinutes());
+            const seconds = pad(now.getSeconds());
+
+            return `${year}${month}${day}${hours}${minutes}${seconds}`;
+        }
 
         document.addEventListener('DOMContentLoaded', function () {
             FilePond.registerPlugin(
@@ -61,10 +74,20 @@
             const form = document.getElementById('postForm');
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
-                var formData = new FormData(form);
+                let formData = new FormData(form);
+                let counter = 1;
+                const timestamp = getLocalTimestamp();
 
                 pond.getFiles().forEach(fileItem => {
-                    formData.append('filepond', fileItem.file);
+                    const original = fileItem.file;
+                    const ext = original.name.split('.').pop();
+                    const newName = `${timestamp}_${counter}.${ext}`;
+                    const renamed = new File([original], newName, {
+                        type: original.type,
+                        lastModified: original.lastModified,
+                    });
+                    formData.append('filepond', renamed);
+                    counter++;
                 });
 
                 fetch(form.action, {
