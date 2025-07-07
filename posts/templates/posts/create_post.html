@@ -1,12 +1,13 @@
 {% extends 'posts/base.html' %}
 
 {% block content %}
-    <form action="{% url "posts:create_post" %}" method="POST" enctype="multipart/form-data">
+    <form id="postForm" action="{% url "posts:create_post" %}" method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form.as_p }}
         <input type="file"
                class="filepond"
                name="filepond"
+               id="filepond"
                multiple
                {% comment %}
                data-allow-reorder="true"
@@ -32,92 +33,63 @@
         {% endfor %}
     {% endif %}
 
-    {% comment %}<label for="title">Title</label>
-    <input type="text" name="" id="title" class="form-control">
-    <label for="description">Description</label>
-    <textarea name="" id="description" cols="30" rows="10" class="form-control"></textarea>
-    <button type="button" id="saveBtn" class="btn btn-primary mt-4">Save</button>{% endcomment %}
-<!--
     <script>
 
         document.addEventListener('DOMContentLoaded', function () {
-        var files = []
+            FilePond.registerPlugin(
+                FilePondPluginFileValidateSize,
+                FilePondPluginFileValidateType,
+                FilePondPluginImagePreview,
+                //FilePondPluginFileValidateSize,
+            );
 
-        FilePond.registerPlugin(
-            FilePondPluginFileValidateSize,
-            FilePondPluginFileValidateType,
-            FilePondPluginImagePreview,
-            //FilePondPluginFileValidateSize,
-        );
-
-        FilePond.setOptions({
-            server: null,
-            allowMultiple: true,
-            maxFiles: 4,
-            maxFileSize: '3MB',
-            credits: false,
-            dropOnPage: true,
-            dropOnElement: true,
-        })
-        const inputElement = document.querySelector('input[type="file"]');
-        const pond = FilePond.create(inputElement, {
-            acceptedFileTypes: ['image/*'],
-            labelFileTypeNotAllowed: 'Formato de archivo inválido. Ingrese fotos o imágenes.',
-            onaddfile: (err, fileItem) => {
-                if(!err){
-                    files.push(fileItem.file);
-                }
-                console.log(files);
-            },
-            onremovefile: (err, fileItem) => {
-                var index = files.indexOf(fileItem);
-                console.log(fileItem);
-                console.log(files);
-                if (index > -1) {
-                    files.splice(index, 1);
-                }
-                console.log(files);
-            }
-        });
-
-        {% comment %}
-        var formData = new FormData();
-        var title = document.getElementById('title');
-        var description = document.getElementById('description');
-        document.getElementById('saveBtn').onclick = function (e) {
-            formData.append('title', title.value);
-            formData.append('description', description.value);
-            formData.append('length', files.length)
-
-            //files.forEach((fileId, index) => {
-            //    formData.append()
-            //})
-
-            for (var i = 0; i < files.length; i++) {
-                formData.append('images' + i, files[i]);
-            }
-
-            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-
-            $.ajax({
-                type: 'POST',
-                url: '{% url "posts:create_post" %}',
-                data: formData,
-                cache: false,
-                processData: false,
-                contentType: false,
-                enctype: 'multipart/form-data',
-                success: function () {
-                    alert('The post has been created.');
-                },
-                error: function (xhr, errmsg, err) {
-                    console.log(xhr.status + ":" + xhr.responseText)
-                }
+            FilePond.setOptions({
+                server: null,
+                allowMultiple: true,
+                maxFiles: 4,
+                maxFileSize: '3MB',
+                credits: false,
+                dropOnPage: true,
+                dropOnElement: true,
             })
-        };
-        {% endcomment %}
-    })
+            const inputElement = document.querySelector('input[type="file"]');
+            const pond = FilePond.create(inputElement, {
+                acceptedFileTypes: ['image/*'],
+                labelFileTypeNotAllowed: 'Formato de archivo inválido. Ingrese fotos o imágenes.',
+            });
+
+            const form = document.getElementById('postForm');
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var formData = new FormData(form);
+
+                pond.getFiles().forEach(fileItem => {
+                    formData.append('filepond', fileItem.file);
+                });
+
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            //alert("Post created!");
+                            window.location.href = "{% url 'posts:index' %}";
+                        } else {
+                            return response.text().then(text => {
+                                console.error('Error:', text);
+                                alert("There was an error: " + text);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Unexpected error:', error);
+                    });
+            })
+        })
 
     </script>
-    -->
 {% endblock %}

@@ -37,6 +37,7 @@ def create_post_view(request):
             return redirect("posts:index")
     else:
         form = AddPostForm()
+
     context = {
         'form': form,
     }
