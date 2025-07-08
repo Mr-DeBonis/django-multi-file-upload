@@ -34,6 +34,7 @@
     {% endif %}
 
     <script>
+        const transformedFilesMap = new Map();
         function getLocalTimestamp() {
             const now = new Date();
             const pad = (n) => String(n).padStart(2, '0');
@@ -48,19 +49,34 @@
             return `${year}${month}${day}${hours}${minutes}${seconds}`;
         }
 
+        function* filenameGenerator() {
+            let counter = 0;
+            const timestamp = getLocalTimestamp();
+
+            while (true) {
+                yield `${timestamp}_${counter}`;
+                counter++;
+            }
+        }
+
+        const getFilename = filenameGenerator();
+
+        document.addEventListener('FilePond:preparefile', (e) => {
+            console.log("Archivo preparado", e.detail);
+        })
         document.addEventListener('DOMContentLoaded', function () {
             FilePond.registerPlugin(
-                FilePondPluginFileValidateSize,
+                FilePondPluginFileRename,
                 FilePondPluginFileValidateType,
                 FilePondPluginImagePreview,
-                //FilePondPluginFileValidateSize,
+                FilePondPluginImageResize,
+                FilePondPluginImageTransform,
             );
 
             FilePond.setOptions({
                 server: null,
                 allowMultiple: true,
-                maxFiles: 4,
-                maxFileSize: '3MB',
+                maxFiles: 3,
                 credits: false,
                 dropOnPage: true,
                 dropOnElement: true,
@@ -69,26 +85,39 @@
             const pond = FilePond.create(inputElement, {
                 acceptedFileTypes: ['image/*'],
                 labelFileTypeNotAllowed: 'Formato de archivo inválido. Ingrese fotos o imágenes.',
+                // Resize before upload
+                imageResizeTargetWidth: 1280,
+                imageResizeTargetHeight: 1280,
+                imageResizeMode: 'contain',
+                imageResizeUpscale: "false",
+                // Compression
+                //allowImageTransform: true,
+                //imageTransformVariantsIncludeDefault: false,
+                //imageTransformOutputQuality: 90,
+                imageTransformOutputMimeType: 'image/jpeg', // force to JPEG
+                fileRenameFunction: (file) => {
+                    const newFilename = getFilename.next().value;
+                    return `${newFilename}${file.extension}`;
+                },
+                onremovefile: (err, file) => {
+                    transformedFilesMap.delete(file.id);
+                },
+                onpreparefile: (file, output) => {
+                    const outputFile = new File([output], output.name, {type: output.type});
+                    transformedFilesMap.set(file.id, outputFile);
+                }
+
             });
 
             const form = document.getElementById('postForm');
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
                 let formData = new FormData(form);
-                let counter = 1;
-                const timestamp = getLocalTimestamp();
 
-                pond.getFiles().forEach(fileItem => {
-                    const original = fileItem.file;
-                    const ext = original.name.split('.').pop();
-                    const newName = `${timestamp}_${counter}.${ext}`;
-                    const renamed = new File([original], newName, {
-                        type: original.type,
-                        lastModified: original.lastModified,
-                    });
-                    formData.append('filepond', renamed);
-                    counter++;
-                });
+                pond.getFiles().forEach((fileItem) =>{
+                    const transformed = transformedFilesMap.get(fileItem.id);
+                    formData.append('filepond', transformed);
+                })
 
                 fetch(form.action, {
                     method: 'POST',
@@ -99,7 +128,6 @@
                 })
                     .then(response => {
                         if (response.ok) {
-                            //alert("Post created!");
                             window.location.href = "{% url 'posts:index' %}";
                         } else {
                             return response.text().then(text => {
@@ -111,6 +139,7 @@
                     .catch(error => {
                         console.error('Unexpected error:', error);
                     });
+
             })
         })
 
